@@ -1,28 +1,46 @@
 library ieee;
 use ieee.std_logic_1164.all;
 
-entity shiftRegister is                                  --shifts both left and right 1 bit
-	port	(serialInput: in std_logic;							
-			clk: in std_logic;
-			shiftRight: in std_logic;								--direction of shift: '0'-left, '1'-right
-			clr: in std_logic;
-			parallelOutput: inout std_logic_vector(3 downto 0));
+
+entity shiftRegister is                                  
+	port	(
+				serialInput: in std_logic;							
+				inputClk: in std_logic;
+				reset: in std_logic;
+				parallelOutput: out std_logic_vector(3 downto 0);
+				parallelOutputExtraBit: out std_logic
+			);
+			
 end shiftRegister;
 
 architecture Behavioral of shiftRegister is
+	signal outputBuffer: std_logic_vector(3 downto 0) := (others=>'0');
+	signal outputBufferExtraBit: std_logic := '0';
+	
 begin
-	process(clk,clr)
+	
+	process(reset,inputClk, serialInput)
 	begin
-		if clr='1' then
-			parallelOutput<="0000";
+	
+		if (reset='1') then
+			outputBuffer <= "0000";
+			outputBufferExtraBit <= '0';
 			
-		elsif (clk'event and clk='1' and shiftRight='1') then
-			parallelOutput(3)<=serialInput;
-			parallelOutput(2 downto 0)<=parallelOutput(3 downto 1);
 			
-		elsif (clk'event and clk='1' and shiftRight='0') then
-			parallelOutput(0)<=serialInput;
-			parallelOutput(3 downto 1)<=parallelOutput(2 downto 0);
+		elsif (inputClk'event and inputClk='1') then
+			outputBuffer(3) <= serialInput;
+			outputBufferExtraBit <= outputBuffer(0);
+			outputBuffer(2 downto 0) <= outputBuffer(3 downto 1);	
 		end if;
 	end process;
+	
+	
+	
+	process (outputBuffer, outputBufferExtraBit)
+	begin
+		parallelOutput <= outputBuffer;
+		parallelOutputExtraBit <= outputBufferExtraBit;
+	end process;
+	
+		
 end Behavioral;
